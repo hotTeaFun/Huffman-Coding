@@ -1,0 +1,2 @@
+This is a simple test of Huffman Coding in C++.
+这是关于Unicode的支持测试。
