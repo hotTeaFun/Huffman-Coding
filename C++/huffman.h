@@ -10,32 +10,32 @@ using namespace std;
 class huffman{
     private:
     map<char,unsigned long> charset;
-    //储存文件中出现的所有字符
+    //储存文件中出现的所有字符，char:字符，unsigned long:出现次数
     vector<pair<char,unsigned long>> sorted;
-    //储存排序后的字符
+    //储存排序后的字符，char:字符，unsigned long:出现次数
     vector<bool> huffman_code;
-    //储存哈夫曼编码
+    //储存哈夫曼编码，使用bool节约内存
     public:
      string filename;
-    //储存待处理文件名
+    //储存待处理文件名(filename)
     bool IsIn(char);
-    //检测当前字符是否以出现在字符组中
+    //检测当前字符(char)是否已出现在字符组中，若已出现返回true
     void join(char);
-    //将字符储存在字符组内
+    //将字符(char)储存在字符组(charset)内
     void Sort();
     //将字符按出现频率从高到低排序
-    void store_coding(string);
-    //储存编码方案
-    void parse_coding(string);
-    //读取编码方案
-    void write(string);
-    //写入二进制文件
+    void store_coding(string filename);
+    //将编码方案储存至文件(filename)内
+    void parse_coding(string filename);
+    //从文件(filename)中读取编码方案
+    void write(string file);
+    //二次扫描待处理文件,并将哈夫曼编码写入二进制文件(file)中
     unsigned long bit_sum(char);
-    //返回给定字符对应编码中1的个数
-    void read(string);
+    //返回给定字符(char)对应编码中为１的总位数
+    void read();
     //读取二进制文件
-    void parse();
-    //解析二进制文件,并将反转后的字符
+    void parse(string filename);
+    //解析二进制文件,并将解析后的字符储存在文件(filename)中
     huffman(string name){
         filename=name;
     }
@@ -72,7 +72,7 @@ void huffman::store_coding(string filename){
              for(auto it:sorted)
                 out_coding<<it.first; 
         }
-    cout<<endl<<"All done!"<<endl;
+    cout<<"All done!"<<endl;
     out_coding.clear();
     out_coding.close();
 }
@@ -105,7 +105,7 @@ unsigned long huffman::bit_sum(char current){
      return sum;
 } 
    
- void huffman::write(string filename){
+ void huffman::write(string file){
      ifstream input_file;
      input_file.open(filename,ios_base::in);
       char current;
@@ -120,7 +120,7 @@ unsigned long huffman::bit_sum(char current){
          }
          huffman_code.insert(huffman_code.end(),8-huffman_code.size()%8,true);
      ofstream out_bin;
-     out_bin.open("huffman.bin",ios::out|ios::binary);
+     out_bin.open(file,ios::out|ios::binary);
      if(!out_bin.is_open()){
          cerr<<"无法写入编码到文件"<<"huffman.bin"<<endl;
          out_bin.clear();
@@ -136,18 +136,12 @@ unsigned long huffman::bit_sum(char current){
              }
              count++;
              char signed_char=(char)bt;
-             cout<<"["<<(int)bt<<"]"<<" ";
+        //     cout<<"["<<(int)bt<<"]"<<" ";
          out_bin.write((char *)&bt,sizeof(char));
-         }
-         cout<<endl<<count<<"写入的二进制位为：\n";
-          for(auto i:huffman_code){
-             cout<<i;
-         }
-         cout<<endl;
-         
+         }    
      }
  }
- void huffman::read(string filename){
+ void huffman::read(){
      ifstream in_bin;
      in_bin.open(filename,ios::in|ios::binary);
      if(!in_bin.is_open()){
@@ -160,7 +154,7 @@ unsigned long huffman::bit_sum(char current){
          while(in_bin.read(&storage,sizeof(char))){
              count++;
              unsigned char Char=(unsigned char)storage;
-             cout<<"["<<(int)Char<<"]"<<" ";
+             //cout<<"["<<(int)Char<<"]"<<" ";
              bool bak[8];
              for(int j=0;j<8;j++){
              if(Char%2==1) bak[7-j]=true;
@@ -170,26 +164,19 @@ unsigned long huffman::bit_sum(char current){
             for(int j=0;j<8;j++)
                 huffman_code.push_back(bak[j]);
          }
-         cout<<count<<"读取的二进制位为：\n";
-         for(auto i:huffman_code){
-             cout<<i;
-         }
-         cout<<endl;
-
      }
  }
-void huffman::parse(){
+void huffman::parse(string filename){
      ofstream out_file;
-        out_file.open("origin.txt",ios::out);
+        out_file.open(filename,ios::out);
     unsigned long flag=0;
     for(unsigned long i=0;i<huffman_code.size();i++){
         if(!huffman_code.at(i)){
-            cout<<"{"<<i-flag<<"}";
+           // cout<<"{"<<i-flag<<"}";
             out_file<<sorted.at(i-flag).first;
             flag=i+1;
         }
     }
-    cout<<endl;
     out_file.clear();
     out_file.close();
 }
