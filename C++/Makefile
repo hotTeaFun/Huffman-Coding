@@ -1,3 +1,6 @@
-all:huffman.o   g++ -o huffman huffman.o
-Huffman.o:huffman.cpp   g++ -c -o huffman.o huffman.cpp
-clean:  rm huffman huffman.o
+    huffman:huffman.o
+        g++ huffman.o -o huffman
+    huffman.o:huffman.cpp
+        g++ -c -o huffman.o huffman.cpp
+    clean:
+        rm -f *.o  
