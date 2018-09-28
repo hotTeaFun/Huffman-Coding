@@ -7,12 +7,27 @@
 #include <algorithm>
 #include<cmath>
 using namespace std;
+struct node {
+    node* parent;
+    node* left;
+    node* right;
+    unsigned long value;
+    //字符出现次数
+    std::string flag;
+    //分配编码
+    node(unsigned long v){
+        value=v;
+    }
+};
+
 class huffman{
     private:
     map<char,unsigned long> charset;
     //储存文件中出现的所有字符，char:字符，unsigned long:出现次数
-    vector<pair<char,unsigned long>> sorted;
-    //储存排序后的字符，char:字符，unsigned long:出现次数
+    vector<pair<char,node>> sorted;
+    //储存排序后的字符，char:字符，node:字符相关信息
+    map<char,node> project;
+    //储存编码方案，char:字符，string:{0|1}+
     vector<bool> huffman_code;
     //储存哈夫曼编码，使用bool节约内存
     public:
@@ -22,6 +37,8 @@ class huffman{
     //检测当前字符(char)是否已出现在字符组中，若已出现返回true
     void join(char);
     //将字符(char)储存在字符组(charset)内
+    void change(pair<char,node>,bool);
+    //重新改变编码方案
     void Sort();
     //将字符按出现频率从高到低排序
     void store_coding(string filename);
@@ -36,6 +53,8 @@ class huffman{
     //读取二进制文件
     void parse(string filename);
     //解析二进制文件,并将解析后的字符储存在文件(filename)中
+    void allocate();
+    //为字符分配编码方案
     huffman(string name){
         filename=name;
     }
@@ -49,16 +68,38 @@ void huffman::join(char current){
     else
         charset[current]=1;
 }
-
+void huffman::change(pair<char,node> current,bool flag){
+        project[current.first]=current.second;
+        project[current.first].flag+=flag?"0":"1";
+}
 void huffman::Sort(){
      for(auto it:charset)
     {
-        sorted.push_back(make_pair(it.first,it.second));
+        sorted.push_back(make_pair(it.first,*new node(it.second)));
     }
-sort(sorted.begin(),sorted.end(),[](const pair<char, unsigned long> &x, const pair<char, unsigned long> &y) -> int {
-        return x.second > y.second;
+sort(sorted.begin(),sorted.end(),[](const pair<char, node> &x, const pair<char, node> &y) -> int {
+        return x.second.value < y.second.value;
     });
 }
+
+void huffman::allocate(){
+    for(int i=0;i<sorted.size()-1;i++){
+        auto left=sorted.back();
+        sorted.pop_back();
+        auto right=sorted.back();
+        sorted.pop_back();
+        change(left,true);
+        change(right,false);
+        auto leaf=*new node(left.second.value+right.second.value);
+        leaf.left=&(left.second);
+        leaf.right=&(right.second);
+        sorted.push_back(make_pair(NULL,leaf));
+        sort(sorted.begin(),sorted.end(),[](const pair<char, node> &x, const pair<char, node> &y) -> int {
+        return x.second.value < y.second.value;
+    });
+    }
+}
+
 void huffman::store_coding(string filename){
     ofstream out_coding;
     out_coding.open(filename,ios_base::out);
