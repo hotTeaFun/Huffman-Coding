@@ -8,25 +8,29 @@
 #include<cmath>
 using namespace std;
 struct node {
-    node* parent;
+    // node* parent;
     node* left;
     node* right;
+    char node_char;
     unsigned long value;
     //字符出现次数
     std::string flag;
     //分配编码
-    node(unsigned long v){
+    node(unsigned long v,char c){
         value=v;
+        node_char=c;
     }
 };
 
 class huffman{
     private:
+    const char FLAG_LEFT='1';
+    const char FLAG_RIGHT='0';
     map<char,unsigned long> charset;
     //储存文件中出现的所有字符，char:字符，unsigned long:出现次数
-    vector<pair<char,node>> sorted;
+    vector<node> sorted;
     //储存排序后的字符，char:字符，node:字符相关信息
-    map<char,node> project;
+    map<char,string> project;
     //储存编码方案，char:字符，string:{0|1}+
     vector<bool> huffman_code;
     //储存哈夫曼编码，使用bool节约内存
@@ -55,6 +59,7 @@ class huffman{
     //解析二进制文件,并将解析后的字符储存在文件(filename)中
     void allocate();
     //为字符分配编码方案
+    void travel(node&);
     huffman(string name){
         filename=name;
     }
@@ -68,17 +73,17 @@ void huffman::join(char current){
     else
         charset[current]=1;
 }
-void huffman::change(pair<char,node> current,bool flag){
-        project[current.first]=current.second;
-        project[current.first].flag+=flag?"0":"1";
-}
+// void huffman::change(pair<char,node> current,bool flag){
+//         project[current.first]=current.second;
+//         project[current.first].flag=flag?"0":"1"+project[current.first].flag;
+// }
 void huffman::Sort(){
      for(auto it:charset)
     {
-        sorted.push_back(make_pair(it.first,*new node(it.second)));
+        sorted.push_back(*new node(it.second,it.first));
     }
-sort(sorted.begin(),sorted.end(),[](const pair<char, node> &x, const pair<char, node> &y) -> int {
-        return x.second.value < y.second.value;
+sort(sorted.begin(),sorted.end(),[](const node &x, const node &y) -> int {
+        return x.value > y.value;
     });
 }
 
@@ -88,18 +93,32 @@ void huffman::allocate(){
         sorted.pop_back();
         auto right=sorted.back();
         sorted.pop_back();
-        change(left,true);
-        change(right,false);
-        auto leaf=*new node(left.second.value+right.second.value);
-        leaf.left=&(left.second);
-        leaf.right=&(right.second);
-        sorted.push_back(make_pair(NULL,leaf));
+        auto leaf=*new node(left.value+right.value,(char)NULL);
+        leaf.left=&left;
+        leaf.right=&right;
+        // left.second.parent=&leaf;
+        // right.second.parent=&leaf;
+        sorted.push_back(leaf);
         sort(sorted.begin(),sorted.end(),[](const pair<char, node> &x, const pair<char, node> &y) -> int {
-        return x.second.value < y.second.value;
+        return x.second.value > y.second.value;
     });
     }
+    travel(sorted.back());
 }
-
+void huffman::travel(node& root){
+    if(root.left)
+    project.insert(pair<char,string>(root.node_char,root.flag)); 
+    else {
+        root.left->flag=FLAG_LEFT+root.left->flag;
+        travel(*(root.left));
+    }
+    if(root.right)
+    project.insert(make_pair(root.node_char,root.flag));
+    else  {
+        root.right->flag=FLAG_RIGHT+root.right->flag;
+        travel(*(root.right));
+    }
+}
 void huffman::store_coding(string filename){
     ofstream out_coding;
     out_coding.open(filename,ios_base::out);
@@ -110,8 +129,8 @@ void huffman::store_coding(string filename){
             exit(EXIT_FAILURE);
         }
         else{
-             for(auto it:sorted)
-                out_coding<<it.first; 
+             for(auto it:project)
+                out_coding<<it.first<<" "<<it.second<<endl; 
         }
     cout<<"All done!"<<endl;
     out_coding.clear();
@@ -130,35 +149,20 @@ in_coding.open(filename,ios::in);
             char current;
             unsigned long i=0;
             while(in_coding.get(current)){
-                sorted.push_back(make_pair(current,i++));
+                string coding;
+                in_coding>>coding;
+                project.insert(make_pair(current,coding));
             }
-            cout<<endl;
         }
        
-}
-unsigned long huffman::bit_sum(char current){
-    unsigned long sum=0;
-     for(auto each:sorted){
-         if(current==each.first)
-         break;
-         sum++;
-     }
-     return sum;
-} 
-   
+}   
  void huffman::write(string file){
      ifstream input_file;
      input_file.open(filename,ios_base::in);
       char current;
-         while(input_file.get(current)){
-             unsigned long sum=bit_sum(current);
-              if(sum==0)
-              huffman_code.push_back(false);
-              else{
-                  huffman_code.insert(huffman_code.end(),sum,true);
-                  huffman_code.push_back(false);
-              }
-         }
+         while(input_file.get(current))
+             for(int i=0;i<project[current].size();i++)
+                 huffman_code.push_back(project[current][i]==FLAG_LEFT);
          huffman_code.insert(huffman_code.end(),8-huffman_code.size()%8,true);
      ofstream out_bin;
      out_bin.open(file,ios::out|ios::binary);
@@ -193,9 +197,8 @@ unsigned long huffman::bit_sum(char current){
          exit(EXIT_FAILURE);
      }
      else{
-         char storage;int count =0;
-         while(in_bin.read(&storage,sizeof(char))){
-             count++;
+         char storage;
+         while(in_bin.read(&storage,sizeof(char))){ 
              unsigned char Char=(unsigned char)storage;
              //cout<<"["<<(int)Char<<"]"<<" ";
              bool bak[8];
@@ -215,8 +218,7 @@ void huffman::parse(string filename){
     unsigned long flag=0;
     for(unsigned long i=0;i<huffman_code.size();i++){
         if(!huffman_code.at(i)){
-           // cout<<"{"<<i-flag<<"}";
-            out_file<<sorted.at(i-flag).first;
+            out_file<<endl;
             flag=i+1;
         }
     }

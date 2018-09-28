@@ -1,0 +1,30 @@
+Todo:
+ FIRST :void allocate()
+
+    input:vector<pair<char,node>> sorted;
+    //储存排序后的字符，char:字符，node:字符相关信息
+    output: map<char,string> project;
+    //储存编码方案，char:字符，string:{0|1}+
+    
+
+ SECOND:void store_coding(string filename); 
+
+    input: map<char,string> project;
+    //储存编码方案，char:字符，string:{0|1}+
+    
+    //将编码方案储存至文件(filename)内
+ THIRD :void write(string file);
+
+    //二次扫描待处理文件,并将哈夫曼编码写入二进制文件(file)中
+
+ FOURTH:void read();
+
+    //读取二进制文件
+
+ FIFTH :void parse_coding(string filename);
+
+    //从文件(filename)中读取编码方案
+
+ SIXTH :void parse(string filename);
+
+    //解析二进制文件,并将解析后的字符储存在文件(filename)中
