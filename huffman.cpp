@@ -136,6 +136,8 @@ void Single_Compress(string in_file,
     input_file.clear();
     input_file.close();
     HM.Sort();
+    HM.allocate();
+    system("pause");
     HM.store_coding(code_file);
     HM.write(out_file);
     cout<<"已成功压缩文件："<<in_file<<"  "<<

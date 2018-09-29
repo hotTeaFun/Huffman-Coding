@@ -99,20 +99,20 @@ void huffman::allocate(){
         // left.second.parent=&leaf;
         // right.second.parent=&leaf;
         sorted.push_back(leaf);
-        sort(sorted.begin(),sorted.end(),[](const pair<char, node> &x, const pair<char, node> &y) -> int {
-        return x.second.value > y.second.value;
+       sort(sorted.begin(),sorted.end(),[](const node &x, const node &y) -> int {
+        return x.value > y.value;
     });
     }
     travel(sorted.back());
 }
 void huffman::travel(node& root){
-    if(root.left)
+    if(!root.left)
     project.insert(pair<char,string>(root.node_char,root.flag)); 
     else {
         root.left->flag=FLAG_LEFT+root.left->flag;
         travel(*(root.left));
     }
-    if(root.right)
+    if(!root.right)
     project.insert(make_pair(root.node_char,root.flag));
     else  {
         root.right->flag=FLAG_RIGHT+root.right->flag;
@@ -130,7 +130,9 @@ void huffman::store_coding(string filename){
         }
         else{
              for(auto it:project)
-                out_coding<<it.first<<" "<<it.second<<endl; 
+                {out_coding<<it.first<<" "<<it.second<<endl;
+                cout <<"编码方案为：　"<< it.first<<" "<<it.second<<endl;
+                }
         }
     cout<<"All done!"<<endl;
     out_coding.clear();
